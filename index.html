@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #333;
+            margin: 0;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 10px;
+            width: 60%;
+            height: 40%;
+        }
+        .card {
+            background-image: url('card-back.png');
+            background-size: cover;
+            cursor: pointer;
+            position: relative;
+        }
+        .card::before {
+            content: '';
+            display: block;
+            padding-bottom: 150%; 
+        }
+        .flipped {
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+            cursor: default;
+        }
+        #game-over, #game-won {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="grid">
+    <div class="card" data-card="joker"></div>
+    <div class="card" data-card="dummy"></div>
+    <div class="card" data-card="dummy"></div>
+    <div class="card" data-card="dummy"></div>
+    <div class="card" data-card="dummy"></div>
+    <div class="card" data-card="dummy"></div>
+    <div class="card" data-card="harley"></div>
+    <div class="card" data-card="dummy"></div>
+</div>
+
+<img id="game-over" src="joker-gameover.png" alt="Game Over" onclick="restartGame()">
+<img id="game-won" src="joker-welcome.png" alt="Welcome to My Army" onclick="restartGame()">
+
+<audio id="joker-laugh" src="joker-laugh.mp3" loop></audio>
+<audio id="why-so-serious" src="why-so-serious.mp3"></audio>
+<audio id="hi-puddin" src="hi-puddin.mp3"></audio>
+
+<script>
+    let firstCard = null;
+    let secondCard = null;
+    let gameOver = false;
+
+    const cards = document.querySelectorAll('.card');
+    const jokerLaugh = document.getElementById('joker-laugh');
+    const whySoSerious = document.getElementById('why-so-serious');
+    const hiPuddin = document.getElementById('hi-puddin');
+    const gameOverImage = document.getElementById('game-over');
+    const gameWonImage = document.getElementById('game-won');
+
+    // Shuffle the cards at the start of each game
+    const cardImages = ['joker', 'harley', 'dummy', 'dummy', 'dummy', 'dummy', 'dummy', 'dummy'];
+    shuffleCards();
+
+    function shuffleCards() {
+        const shuffled = cardImages.sort(() => 0.5 - Math.random());
+        cards.forEach((card, index) => {
+            card.setAttribute('data-card', shuffled[index]);
+            card.classList.remove('flipped');
+            card.style.backgroundImage = 'url(card-back.png)';
+        });
+        firstCard = null;
+        secondCard = null;
+        gameOver = false;
+        gameOverImage.style.display = 'none';
+        gameWonImage.style.display = 'none';
+        jokerLaugh.pause();
+        jokerLaugh.currentTime = 0;
+    }
+
+    cards.forEach(card => card.addEventListener('click', handleCardClick));
+
+    function handleCardClick(event) {
+        if (gameOver) return;
+        const card = event.target;
+
+        if (!firstCard) {
+            firstCard = card;
+            revealCard(firstCard);
+        } else if (!secondCard && card !== firstCard) {
+            secondCard = card;
+            revealCard(secondCard);
+            checkMatch();
+        }
+    }
+
+    function revealCard(card) {
+        const cardType = card.getAttribute('data-card');
+        card.classList.add('flipped');
+        card.style.backgroundImage = `url(${cardType}-card.png)`;
+        if (cardType === 'joker') {
+            whySoSerious.play();
+        } else if (cardType === 'harley') {
+            hiPuddin.play();
+        }
+    }
+
+    function checkMatch() {
+        const card1Type = firstCard.getAttribute('data-card');
+        const card2Type = secondCard.getAttribute('data-card');
+
+        // Win Condition: Joker and Harley are matched
+        if ((card1Type === 'joker' && card2Type === 'harley') || (card1Type === 'harley' && card2Type === 'joker')) {
+            gameWon();
+        } else {
+            // Game Over: Two dummy cards clicked or incorrect pair
+            gameLost();
+        }
+    }
+
+    function gameWon() {
+        gameOver = true;
+        gameWonImage.style.display = 'block';
+    }
+
+    function gameLost() {
+        jokerLaugh.play();  
+        gameOverImage.style.display = 'block';
+        gameOver = true;
+    }
+
+    function restartGame() {
+        shuffleCards();
+    }
+</script>
+
+</body>
+</html>
